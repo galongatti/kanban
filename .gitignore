@@ -1,0 +1,34 @@
+# Dependencies
+**/node_modules/
+
+# Angular and frontend build output
+**/.angular/cache/
+**/dist/
+**/coverage/
+**/out-tsc/
+
+# Java and Maven build output
+**/target/
+**/build/
+
+# Local environment files
+.env
+.env.*
+!.env.example
+
+# Logs and temporary files
+*.log
+*.dtmp
+
+# IDEs and editors
+.idea/
+.vscode/
+*.iml
+*.ipr
+*.iws
+*.suo
+*.user
+
+# Operating system files
+.DS_Store
+Thumbs.db

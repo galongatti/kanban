@@ -1,0 +1,38 @@
+<main class="auth-page">
+  <section class="intro">
+    <span class="brand">kanban.</span>
+    <h1>Organize o trabalho.<br /><em>Entregue com clareza.</em></h1>
+    <p>Uma visão simples e compartilhada do que importa para o seu time.</p>
+  </section>
+
+  <section class="auth-card" aria-labelledby="form-title">
+    <p class="eyebrow">{{ isRegistering() ? 'COMECE AGORA' : 'BEM-VINDO DE VOLTA' }}</p>
+    <h2 id="form-title">{{ isRegistering() ? 'Crie sua conta' : 'Entre no seu espaço' }}</h2>
+    <form (ngSubmit)="submit()">
+      @if (isRegistering()) {
+        <label>
+          Nome
+          <input [(ngModel)]="name" name="name" required autocomplete="name" />
+        </label>
+      }
+      <label>
+        E-mail
+        <input [(ngModel)]="email" name="email" type="email" required autocomplete="email" />
+      </label>
+      <label>
+        Senha
+        <input [(ngModel)]="password" name="password" type="password" required minlength="6" autocomplete="current-password" />
+      </label>
+      @if (error()) {
+        <p class="error" role="alert">{{ error() }}</p>
+      }
+      <button type="submit" [disabled]="isSubmitting()">
+        {{ isSubmitting() ? 'Aguarde...' : isRegistering() ? 'Criar conta' : 'Entrar' }}
+      </button>
+    </form>
+    <p class="switch">
+      {{ isRegistering() ? 'Já possui uma conta?' : 'Ainda não possui uma conta?' }}
+      <button type="button" (click)="toggleMode()">{{ isRegistering() ? 'Entrar' : 'Cadastre-se' }}</button>
+    </p>
+  </section>
+</main>

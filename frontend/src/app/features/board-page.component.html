@@ -1,0 +1,161 @@
+<main class="workspace">
+  <aside class="sidebar">
+    <a class="brand" routerLink="/boards">kanban.</a>
+    <button class="new-board" type="button" (click)="openCreate()">+ Novo quadro</button>
+
+    <p class="sidebar-label">SEUS QUADROS</p>
+    <nav aria-label="Quadros">
+      @for (board of boards(); track board.id) {
+        <button
+          class="board-link"
+          type="button"
+          [class.active]="board.id === selectedBoardId()"
+          (click)="selectBoard(board.id)"
+        >
+          <span class="board-dot"></span>{{ board.name }}
+        </button>
+      } @empty {
+        <p class="empty-nav">Crie o primeiro quadro do time.</p>
+      }
+    </nav>
+
+    <button class="logout" type="button" (click)="auth.logout()">Sair</button>
+  </aside>
+
+  <section class="content">
+    @if (isLoading()) {
+      <p class="state">Carregando seus quadros...</p>
+    } @else if (selectedBoard(); as board) {
+      <header class="board-header">
+        <div>
+          <p class="eyebrow">QUADRO ATIVO</p>
+          <h1>{{ board.name }}</h1>
+          <p>{{ board.description }}</p>
+        </div>
+        <div class="header-actions">
+          <button class="outline-button" type="button" (click)="openEdit(board)">Editar quadro</button>
+          <button class="outline-button" type="button" (click)="openCreate()">Novo quadro</button>
+        </div>
+      </header>
+
+      <section class="columns" cdkDropListGroup aria-label="Colunas do quadro">
+        @for (column of orderedColumns(board.columns); track column.id ?? column.nome) {
+          <article class="column">
+            <header>
+              <h2>{{ column.nome }}</h2>
+              <span>{{ cardsForColumn(column.id).length }}</span>
+            </header>
+            <button class="add-card" type="button" (click)="openCreateCard(column)">+ Adicionar card</button>
+            <div class="card-list" cdkDropList [cdkDropListData]="cardsForColumn(column.id)">
+              @for (card of cardsForColumn(column.id); track $index) {
+                <article class="card">
+                  <h3>{{ card.titulo }}</h3>
+                  <p>{{ card.descricao }}</p>
+                </article>
+              } @empty {
+                <div class="empty-column">
+                  <strong>Sem cards</strong>
+                  <span>As tarefas aparecerão aqui.</span>
+                </div>
+              }
+            </div>
+          </article>
+        }
+      </section>
+
+    } @else {
+      <section class="empty-state">
+        <p class="eyebrow">COMECE POR AQUI</p>
+        <h1>Transforme planos em progresso.</h1>
+        <p>Crie um quadro e organize o fluxo de trabalho do seu time.</p>
+        <button type="button" (click)="openCreate()">Criar primeiro quadro</button>
+      </section>
+    }
+  </section>
+
+  @if (isCreating()) {
+    <div class="modal-backdrop" (click)="closeCreate()" role="presentation">
+      <section class="modal" role="dialog" aria-modal="true" aria-labelledby="new-board-title" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <div>
+            <p class="eyebrow">{{ isEditing() ? 'EDITAR QUADRO' : 'NOVO QUADRO' }}</p>
+            <h2 id="new-board-title">{{ isEditing() ? 'Atualize seu fluxo' : 'Configure seu fluxo' }}</h2>
+          </div>
+          <button class="close" type="button" aria-label="Fechar" (click)="closeCreate()">×</button>
+        </div>
+        <form (ngSubmit)="saveBoard()">
+          <label>
+            Nome do quadro
+            <input [(ngModel)]="name" name="name" required placeholder="Ex.: Lançamento do produto" />
+          </label>
+          <label>
+            Descrição
+            <textarea [(ngModel)]="description" name="description" required placeholder="Qual é o objetivo deste quadro?"></textarea>
+          </label>
+          <fieldset>
+            <legend>Colunas (a posição define a ordem)</legend>
+            @for (column of columns; track $index; let index = $index) {
+              <div class="column-input">
+                <input [(ngModel)]="columns[index].nome" [name]="'column-' + index" required />
+                <input
+                  [(ngModel)]="columns[index].posicao"
+                  [name]="'column-position-' + index"
+                  type="number"
+                  min="1"
+                  step="1"
+                  placeholder="Pos."
+                  aria-label="Posição da coluna"
+                  required
+                />
+                <button type="button" aria-label="Remover coluna" (click)="removeColumn(index)">×</button>
+              </div>
+            }
+            <button class="add-column" type="button" (click)="addColumn()">+ Adicionar coluna</button>
+          </fieldset>
+          @if (error()) {
+            <p class="error" role="alert">{{ error() }}</p>
+          }
+          <div class="modal-actions">
+            <button class="secondary" type="button" (click)="closeCreate()">Cancelar</button>
+            <button type="submit" [disabled]="isSaving()">
+              {{ isSaving() ? 'Salvando...' : isEditing() ? 'Salvar alterações' : 'Criar quadro' }}
+            </button>
+          </div>
+        </form>
+      </section>
+    </div>
+  }
+
+  @if (isCreatingCard()) {
+    <div class="modal-backdrop" (click)="closeCreateCard()" role="presentation">
+      <section class="modal card-modal" role="dialog" aria-modal="true" aria-labelledby="new-card-title" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <div>
+            <p class="eyebrow">NOVO CARD</p>
+            <h2 id="new-card-title">Adicionar em {{ cardColumn()?.nome }}</h2>
+          </div>
+          <button class="close" type="button" aria-label="Fechar" (click)="closeCreateCard()">×</button>
+        </div>
+        <form (ngSubmit)="saveCard()">
+          <label>
+            Título
+            <input [(ngModel)]="cardTitle" name="cardTitle" maxlength="100" required placeholder="Ex.: Revisar briefing" />
+          </label>
+          <label>
+            Descrição
+            <textarea [(ngModel)]="cardDescription" name="cardDescription" required placeholder="Descreva a tarefa"></textarea>
+          </label>
+          @if (cardError()) {
+            <p class="error" role="alert">{{ cardError() }}</p>
+          }
+          <div class="modal-actions">
+            <button class="secondary" type="button" (click)="closeCreateCard()">Cancelar</button>
+            <button type="submit" [disabled]="isSavingCard()">
+              {{ isSavingCard() ? 'Salvando...' : 'Criar card' }}
+            </button>
+          </div>
+        </form>
+      </section>
+    </div>
+  }
+</main>

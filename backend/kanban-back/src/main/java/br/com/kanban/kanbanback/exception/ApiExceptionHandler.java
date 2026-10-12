@@ -68,6 +68,33 @@ public class ApiExceptionHandler {
         );
     }
 
+
+    @ExceptionHandler(BoardColumNotFound.class)
+    public ResponseEntity<ApiErrorResponse> handleBoardColumNotFound(
+            BoardColumNotFound exception,
+            HttpServletRequest request
+    ) {
+        return errorResponse(
+                HttpStatus.NOT_FOUND,
+                "BOARD_COLUMN_NOT_FOUND",
+                exception.getMessage(),
+                request
+        );
+    }
+
+    @ExceptionHandler(CardNotFound.class)
+    public ResponseEntity<ApiErrorResponse> handleCardNotFound(
+            CardNotFound exception,
+            HttpServletRequest request
+    ) {
+        return errorResponse(
+                HttpStatus.NOT_FOUND,
+                "CARD_NOT_FOUND",
+                exception.getMessage(),
+                request
+        );
+    }
+
     private ResponseEntity<ApiErrorResponse> errorResponse(
             HttpStatus status,
             String code,

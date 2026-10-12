@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 
 @Entity
 public class ColumnBoard {
@@ -77,8 +78,8 @@ public class ColumnBoard {
     public void setPosicao(Integer posicao) {
         this.posicao = posicao;
     }
-    public List<Card> getCards() {
-        return cards;
+    public Optional<List<Card>> getCards() {
+        return Optional.ofNullable(cards);
     }
     public void setCards(List<Card> cards) {
         this.cards = cards;

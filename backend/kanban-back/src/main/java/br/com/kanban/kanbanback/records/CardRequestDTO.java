@@ -6,6 +6,6 @@ import jakarta.validation.constraints.Size;
 
 import java.util.Optional;
 
-public record CardRequestDTO(Optional<Long> id,
+public record CardRequestDTO(
                              @NotBlank @Size(max = 100) String titulo,
                              @NotBlank String descricao) {}

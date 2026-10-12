@@ -5,6 +5,7 @@ import br.com.kanban.kanbanback.entity.Card;
 import br.com.kanban.kanbanback.entity.ColumnBoard;
 import br.com.kanban.kanbanback.exception.BoardColumNotFound;
 import br.com.kanban.kanbanback.exception.BoardNotFound;
+import br.com.kanban.kanbanback.exception.CardNotFound;
 import br.com.kanban.kanbanback.records.*;
 import br.com.kanban.kanbanback.repository.BoardRepository;
 import br.com.kanban.kanbanback.repository.CardRepository;
@@ -55,10 +56,13 @@ public class BoardService {
 
         Sort sort = Sort.by(Sort.Direction.ASC, "columns.posicao");
 
-        return boardRepository.findAll(sort).stream().map(this::toResponse).toList();
+        List<Board> boards = boardRepository.findAll(sort);
+        return boards.stream().map(this::toResponse).toList();
     }
 
     private BoardResponseDTO toResponse(Board board) {
+
+
 
         return new BoardResponseDTO(
                 board.getId(),
@@ -74,7 +78,10 @@ public class BoardService {
 
     private ColumnBoardResponseDTO toColumnResponse(ColumnBoard columnBoard) {
 
-        List<CardResponseDTO> cardResponse = columnBoard.getCards().stream().map(this::toCardResponse).toList();
+        if(columnBoard == null)
+            return null;
+
+        List<CardResponseDTO> cardResponse = columnBoard.getCards().isPresent() ? columnBoard.getCards().get().stream().map(this::toCardResponse).collect(Collectors.toList()) : null;
 
         return new ColumnBoardResponseDTO(
                 columnBoard.getId(),
@@ -111,6 +118,21 @@ public class BoardService {
         card.setTitulo(cardRequestDTO.titulo());
         card.setCreatedAt(new Date());
         card.setUpdatedAt(new Date());
+
+        cardRepository.save(card);
+    }
+
+    public void atualizarCard(Long boardId, Long columnId, Long cardId, @Valid CardRequestDTO cardRequest) {
+
+        Board board = boardRepository.findById(boardId).orElseThrow(() -> new BoardNotFound("Board não encontrado"));
+
+        ColumnBoard columnBoard = board.getColumns().stream().filter(column -> column.getId().equals(columnId)).findFirst().orElseThrow(() -> new BoardColumNotFound("Coluna do board não encontrada"));
+
+        Card card = cardRepository.findById(cardId).orElseThrow(() -> new CardNotFound("Card não encontrado"));
+        card.setTitulo(cardRequest.titulo());
+        card.setDescricao(cardRequest.descricao());
+        card.setUpdatedAt(new Date());
+        card.setColumnBoard(columnBoard);
 
         cardRepository.save(card);
     }

@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { AuthService } from '../core/auth.service';
 import { BoardService } from '../core/board.service';
-import { Board, BoardColumn, Card, CreateBoard } from '../core/models';
+import { Board, BoardColumn, Card, CreateBoard, CreateCard } from '../core/models';
 
 interface EditableColumn {
   id?: number;
@@ -30,14 +30,17 @@ export class BoardPageComponent implements OnInit {
   readonly isEditing = signal(false);
   readonly isSaving = signal(false);
   readonly isCreatingCard = signal(false);
+  readonly isEditingCard = signal(false);
   readonly isSavingCard = signal(false);
   readonly error = signal('');
   readonly cardError = signal('');
   readonly cardColumn = signal<BoardColumn | null>(null);
+  readonly editingCardId = signal<number | null>(null);
   name = '';
   description = '';
   cardTitle = '';
   cardDescription = '';
+  cardColumnId: number | null = null;
   columns: EditableColumn[] = this.defaultColumns();
 
   constructor(
@@ -83,31 +86,50 @@ export class BoardPageComponent implements OnInit {
 
   openCreateCard(column: BoardColumn): void {
     this.cardColumn.set(column);
+    this.cardColumnId = column.id ?? null;
     this.cardTitle = '';
     this.cardDescription = '';
     this.cardError.set('');
+    this.isEditingCard.set(false);
+    this.isCreatingCard.set(true);
+  }
+
+  openEditCard(column: BoardColumn, card: Card): void {
+    if (!card.id || !column.id) {
+      return;
+    }
+
+    this.cardColumn.set(column);
+    this.cardColumnId = column.id;
+    this.editingCardId.set(card.id);
+    this.cardTitle = card.titulo;
+    this.cardDescription = card.descricao;
+    this.cardError.set('');
+    this.isEditingCard.set(true);
     this.isCreatingCard.set(true);
   }
 
   closeCreateCard(): void {
     this.isCreatingCard.set(false);
+    this.isEditingCard.set(false);
     this.cardColumn.set(null);
+    this.editingCardId.set(null);
     this.cardError.set('');
     this.cardTitle = '';
     this.cardDescription = '';
+    this.cardColumnId = null;
   }
 
   saveCard(): void {
     const board = this.selectedBoard();
-    const column = this.cardColumn();
     const title = this.cardTitle.trim();
     const description = this.cardDescription.trim();
+    const columnId = this.cardColumnId;
 
-    if (!board || !column?.id) {
+    if (!board || !columnId) {
       this.cardError.set('Não foi possível identificar a coluna selecionada.');
       return;
     }
-    const columnId = column.id;
 
     if (!title || !description) {
       this.cardError.set('Informe o título e a descrição do card.');
@@ -116,36 +138,28 @@ export class BoardPageComponent implements OnInit {
 
     this.isSavingCard.set(true);
     this.cardError.set('');
-    this.boardService.createCard(board.id, columnId, { titulo: title, descricao: description }).subscribe({
+    const card = { titulo: title, descricao: description };
+    const editingCardId = this.editingCardId();
+    const request = this.isEditingCard() && editingCardId
+      ? this.boardService.updateCard(board.id, columnId, editingCardId, card)
+      : this.boardService.createCard(board.id, columnId, card);
+
+    request.subscribe({
       next: () => {
-        const card: Card = {
-          titulo: title,
-          descricao: description,
-          columnBoardId: columnId
-        };
-        this.boards.update((boards) =>
-          boards.map((currentBoard) =>
-            currentBoard.id !== board.id
-              ? currentBoard
-              : {
-                  ...currentBoard,
-                  columns: currentBoard.columns.map((currentColumn) =>
-                    currentColumn.id !== columnId
-                      ? currentColumn
-                      : {
-                          ...currentColumn,
-                          cards: [...(currentColumn.cards ?? []), card]
-                        }
-                  )
-                }
-          )
-        );
         this.isSavingCard.set(false);
+        if (editingCardId) {
+          this.updateCardInBoard(board.id, editingCardId, columnId, card);
+        } else {
+          this.loadBoards(board.id);
+        }
         this.closeCreateCard();
       },
       error: (response) => {
         this.isSavingCard.set(false);
-        this.cardError.set(response.error?.message ?? 'Não foi possível criar o card.');
+        this.cardError.set(
+          response.error?.message ??
+            (this.isEditingCard() ? 'Não foi possível atualizar o card.' : 'Não foi possível criar o card.')
+        );
       }
     });
   }
@@ -216,11 +230,13 @@ export class BoardPageComponent implements OnInit {
     });
   }
 
-  private loadBoards(): void {
+  private loadBoards(selectedBoardId = this.selectedBoardId()): void {
     this.boardService.list().subscribe({
       next: (boards) => {
         this.boards.set(boards);
-        this.selectedBoardId.set(boards[0]?.id ?? null);
+        this.selectedBoardId.set(
+          boards.some((board) => board.id === selectedBoardId) ? selectedBoardId : boards[0]?.id ?? null
+        );
         this.isLoading.set(false);
       },
       error: (response) => {
@@ -228,6 +244,48 @@ export class BoardPageComponent implements OnInit {
         this.isLoading.set(false);
       }
     });
+  }
+
+  private updateCardInBoard(boardId: number, cardId: number, columnId: number, changes: CreateCard): void {
+    this.boards.update((boards) =>
+      boards.map((board) =>
+        board.id !== boardId
+          ? board
+          : this.updateCardColumns(board, cardId, columnId, changes)
+      )
+    );
+  }
+
+  private updateCardColumns(board: Board, cardId: number, columnId: number, changes: CreateCard): Board {
+    const card = board.columns
+      .flatMap((column) => this.cardsForColumn(column))
+      .find((currentCard) => currentCard.id === cardId);
+
+    if (!card) {
+      return board;
+    }
+
+    return {
+      ...board,
+      columns: board.columns.map((column) => {
+        const cards = this.cardsForColumn(column);
+
+        if (column.id === columnId) {
+          return {
+            ...column,
+            cards: cards.some((currentCard) => currentCard.id === cardId)
+              ? cards.map((currentCard) =>
+                  currentCard.id === cardId
+                    ? { ...currentCard, ...changes, columnBoardId: columnId }
+                    : currentCard
+                )
+              : [...cards, { ...card, ...changes, columnBoardId: columnId }]
+          };
+        }
+
+        return { ...column, cards: cards.filter((currentCard) => currentCard.id !== cardId) };
+      })
+    };
   }
 
   private resetForm(): void {

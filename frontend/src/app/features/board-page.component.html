@@ -49,7 +49,12 @@
             <div class="card-list" cdkDropList [cdkDropListData]="cardsForColumn(column)">
               @for (card of cardsForColumn(column); track card.id ?? $index) {
                 <article class="card">
-                  <h3>{{ card.titulo }}</h3>
+                  <div class="card-header">
+                    <h3>{{ card.titulo }}</h3>
+                    @if (card.id) {
+                      <button type="button" (click)="openEditCard(column, card)">Editar</button>
+                    }
+                  </div>
                   <p>{{ card.descricao }}</p>
                 </article>
               } @empty {
@@ -131,8 +136,10 @@
       <section class="modal card-modal" role="dialog" aria-modal="true" aria-labelledby="new-card-title" (click)="$event.stopPropagation()">
         <div class="modal-header">
           <div>
-            <p class="eyebrow">NOVO CARD</p>
-            <h2 id="new-card-title">Adicionar em {{ cardColumn()?.nome }}</h2>
+            <p class="eyebrow">{{ isEditingCard() ? 'EDITAR CARD' : 'NOVO CARD' }}</p>
+            <h2 id="new-card-title">
+              {{ isEditingCard() ? 'Atualize a tarefa' : 'Adicionar em ' + cardColumn()?.nome }}
+            </h2>
           </div>
           <button class="close" type="button" aria-label="Fechar" (click)="closeCreateCard()">×</button>
         </div>
@@ -145,13 +152,25 @@
             Descrição
             <textarea [(ngModel)]="cardDescription" name="cardDescription" required placeholder="Descreva a tarefa"></textarea>
           </label>
+          @if (isEditingCard() && selectedBoard(); as board) {
+            <label>
+              Coluna
+              <select [(ngModel)]="cardColumnId" name="cardColumnId" required>
+                @for (column of orderedColumns(board.columns); track column.id ?? column.nome) {
+                  @if (column.id) {
+                    <option [ngValue]="column.id">{{ column.nome }}</option>
+                  }
+                }
+              </select>
+            </label>
+          }
           @if (cardError()) {
             <p class="error" role="alert">{{ cardError() }}</p>
           }
           <div class="modal-actions">
             <button class="secondary" type="button" (click)="closeCreateCard()">Cancelar</button>
             <button type="submit" [disabled]="isSavingCard()">
-              {{ isSavingCard() ? 'Salvando...' : 'Criar card' }}
+              {{ isSavingCard() ? 'Salvando...' : isEditingCard() ? 'Salvar alterações' : 'Criar card' }}
             </button>
           </div>
         </form>

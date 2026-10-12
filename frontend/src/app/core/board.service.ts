@@ -22,4 +22,8 @@ export class BoardService {
   createCard(boardId: number, columnId: number, card: CreateCard): Observable<void> {
     return this.http.post<void>(`/api/boards/${boardId}/columns/${columnId}/cards`, card);
   }
+
+  updateCard(boardId: number, columnId: number, cardId: number, card: CreateCard): Observable<void> {
+    return this.http.put<void>(`/api/boards/${boardId}/columns/${columnId}/cards/${cardId}`, card);
+  }
 }

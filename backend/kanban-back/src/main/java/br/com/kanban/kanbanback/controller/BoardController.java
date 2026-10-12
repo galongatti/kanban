@@ -45,4 +45,11 @@ public class BoardController {
         boardService.adicionarCard(boardId, columnId, cardRequestDTO);
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
+
+    @PutMapping("/{boardId}/columns/{columnId}/cards/{cardId}")
+    public ResponseEntity<Void> atualizarCard(@PathVariable Long boardId, @PathVariable Long columnId, @PathVariable Long cardId, @Valid @RequestBody CardRequestDTO cardRequest)
+    {
+        boardService.atualizarCard(boardId, columnId, cardId, cardRequest);
+        return ResponseEntity.ok().build();
+    }
 }

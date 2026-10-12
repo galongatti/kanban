@@ -4,6 +4,7 @@ import br.com.kanban.kanbanback.entity.Board;
 import br.com.kanban.kanbanback.entity.Card;
 import br.com.kanban.kanbanback.entity.ColumnBoard;
 import br.com.kanban.kanbanback.exception.BoardColumNotFound;
+import br.com.kanban.kanbanback.exception.ColumnContainsCard;
 import br.com.kanban.kanbanback.exception.BoardNotFound;
 import br.com.kanban.kanbanback.exception.CardNotFound;
 import br.com.kanban.kanbanback.records.*;
@@ -53,16 +54,12 @@ public class BoardService {
     }
 
     public List<BoardResponseDTO> buscarBoards() {
-
-        Sort sort = Sort.by(Sort.Direction.ASC, "columns.posicao");
-
-        List<Board> boards = boardRepository.findAll(sort);
+        Sort sortColumns = Sort.by(Sort.Order.desc("name"), Sort.Order.asc("columns.posicao"));
+        List<Board> boards = boardRepository.findByActiveTrue(sortColumns);
         return boards.stream().map(this::toResponse).toList();
     }
 
     private BoardResponseDTO toResponse(Board board) {
-
-
 
         return new BoardResponseDTO(
                 board.getId(),
@@ -81,7 +78,7 @@ public class BoardService {
         if(columnBoard == null)
             return null;
 
-        List<CardResponseDTO> cardResponse = columnBoard.getCards().isPresent() ? columnBoard.getCards().get().stream().map(this::toCardResponse).collect(Collectors.toList()) : null;
+        List<CardResponseDTO> cardResponse = columnBoard.getCards().stream().map(this::toCardResponse).collect(Collectors.toList());
 
         return new ColumnBoardResponseDTO(
                 columnBoard.getId(),
@@ -104,7 +101,53 @@ public class BoardService {
     }
 
     public BoardResponseDTO atualizarBoard(Long id, @Valid BoardRequestDTO boardRequestDTO) {
-        return null;
+
+        List<ColumnBoard> colunas = new ArrayList<>();
+
+        Board boardAtual = boardRepository.findById(id).orElseThrow(() -> new BoardNotFound("Board não encontrado"));
+        List<ColumnBoard> colunasAtuais = boardAtual.getColumns();
+        List<Long> colunasAtuaisIds = colunasAtuais.stream().map(ColumnBoard::getId).toList();
+        List<ColumnBoardRequestDTO> colunasRequest = boardRequestDTO.columns();
+
+        colunasRequest.forEach(c -> {
+            if(c.id().isPresent() && colunasAtuaisIds.contains(c.id().get()))
+            {
+                ColumnBoard colunaAtual = colunasAtuais.stream().filter(coluna -> coluna.getId().equals(c.id().get())).findFirst().orElseThrow(() ->
+                        new BoardColumNotFound("Coluna do board não encontrada"));
+                colunaAtual.setNome(c.nome());
+                colunaAtual.setActive(c.active());
+                colunaAtual.setPosicao(c.posicao());
+                colunaAtual.setUpdatedAt(new Date());
+                colunaAtual.setBoard(boardAtual);
+                colunas.add(colunaAtual);
+
+                if(!colunaAtual.getCards().isEmpty() && !c.active())
+                {
+                    throw new ColumnContainsCard("Não é possível desativar a coluna, pois ela contém cards");
+                }
+            }
+            else
+            {
+                ColumnBoard novaColuna = new ColumnBoard();
+                novaColuna.setNome(c.nome());
+                novaColuna.setActive(c.active());
+                novaColuna.setPosicao(c.posicao());
+                novaColuna.setCreatedAt(new Date());
+                novaColuna.setUpdatedAt(new Date());
+                novaColuna.setBoard(boardAtual);
+                colunas.add(novaColuna);
+            }
+        });
+
+        boardAtual.setName(boardRequestDTO.name());
+        boardAtual.setDescription(boardRequestDTO.description());
+        boardAtual.setActive(boardRequestDTO.active());
+        boardAtual.getColumns().clear();
+        boardAtual.getColumns().addAll(colunas);
+        boardAtual.setUpdatedAt(new Date());
+
+        boardRepository.save(boardAtual);
+        return toResponse(boardAtual);
     }
 
     public void adicionarCard(Long boardId, Long columnId, @Valid CardRequestDTO cardRequestDTO) {

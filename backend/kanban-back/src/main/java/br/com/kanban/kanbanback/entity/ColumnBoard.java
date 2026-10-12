@@ -78,8 +78,8 @@ public class ColumnBoard {
     public void setPosicao(Integer posicao) {
         this.posicao = posicao;
     }
-    public Optional<List<Card>> getCards() {
-        return Optional.ofNullable(cards);
+    public List<Card> getCards() {
+        return Optional.ofNullable(cards).orElse(List.of());
     }
     public void setCards(List<Card> cards) {
         this.cards = cards;

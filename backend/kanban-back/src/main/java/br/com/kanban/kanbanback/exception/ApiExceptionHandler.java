@@ -82,6 +82,19 @@ public class ApiExceptionHandler {
         );
     }
 
+    @ExceptionHandler(ColumnContainsCard.class)
+    public ResponseEntity<ApiErrorResponse> handleColumnContainsCard(
+            ColumnContainsCard exception,
+            HttpServletRequest request
+    ) {
+        return errorResponse(
+                HttpStatus.BAD_REQUEST,
+                "COLUMN_CONTAINS_CARD",
+                exception.getMessage(),
+                request
+        );
+    }
+
     @ExceptionHandler(CardNotFound.class)
     public ResponseEntity<ApiErrorResponse> handleCardNotFound(
             CardNotFound exception,

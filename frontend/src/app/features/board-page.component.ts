@@ -176,12 +176,15 @@ export class BoardPageComponent implements OnInit {
   }
 
   removeColumn(index: number): void {
-    if (this.columns.length > 1) {
-      this.columns = this.columns.filter((_, currentIndex) => currentIndex !== index);
+    if (this.columns[index].active && this.columns.filter((column) => column.active).length > 1) {
+      this.columns = this.columns.map((column, currentIndex) =>
+        currentIndex === index ? { ...column, active: false } : column
+      );
     }
   }
 
   saveBoard(): void {
+    
     const columns = this.columns
       .map((column) => ({ ...column, nome: column.nome.trim() }))
       .filter((column) => Boolean(column.nome));
@@ -304,6 +307,7 @@ export class BoardPageComponent implements OnInit {
 
   orderedColumns(columns: BoardColumn[]): BoardColumn[] {
     return columns
+      .filter((column) => column.active)
       .map((column, index) => ({ column, index }))
       .sort((left, right) => {
         const positionDifference = left.column.posicao - right.column.posicao;

@@ -33,7 +33,6 @@ export class BoardPageComponent implements OnInit {
   readonly isSavingCard = signal(false);
   readonly error = signal('');
   readonly cardError = signal('');
-  readonly cardsByColumn = signal<Record<number, Card[]>>({});
   readonly cardColumn = signal<BoardColumn | null>(null);
   name = '';
   description = '';
@@ -124,10 +123,23 @@ export class BoardPageComponent implements OnInit {
           descricao: description,
           columnBoardId: columnId
         };
-        this.cardsByColumn.update((cardsByColumn) => ({
-          ...cardsByColumn,
-          [columnId]: [...(cardsByColumn[columnId] ?? []), card]
-        }));
+        this.boards.update((boards) =>
+          boards.map((currentBoard) =>
+            currentBoard.id !== board.id
+              ? currentBoard
+              : {
+                  ...currentBoard,
+                  columns: currentBoard.columns.map((currentColumn) =>
+                    currentColumn.id !== columnId
+                      ? currentColumn
+                      : {
+                          ...currentColumn,
+                          cards: [...(currentColumn.cards ?? []), card]
+                        }
+                  )
+                }
+          )
+        );
         this.isSavingCard.set(false);
         this.closeCreateCard();
       },
@@ -138,8 +150,8 @@ export class BoardPageComponent implements OnInit {
     });
   }
 
-  cardsForColumn(columnId?: number): Card[] {
-    return columnId ? this.cardsByColumn()[columnId] ?? [] : [];
+  cardsForColumn(column: BoardColumn): Card[] {
+    return column.cards ?? [];
   }
 
   addColumn(): void {

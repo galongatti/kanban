@@ -43,11 +43,11 @@
           <article class="column">
             <header>
               <h2>{{ column.nome }}</h2>
-              <span>{{ cardsForColumn(column.id).length }}</span>
+              <span>{{ cardsForColumn(column).length }}</span>
             </header>
             <button class="add-card" type="button" (click)="openCreateCard(column)">+ Adicionar card</button>
-            <div class="card-list" cdkDropList [cdkDropListData]="cardsForColumn(column.id)">
-              @for (card of cardsForColumn(column.id); track $index) {
+            <div class="card-list" cdkDropList [cdkDropListData]="cardsForColumn(column)">
+              @for (card of cardsForColumn(column); track card.id ?? $index) {
                 <article class="card">
                   <h3>{{ card.titulo }}</h3>
                   <p>{{ card.descricao }}</p>

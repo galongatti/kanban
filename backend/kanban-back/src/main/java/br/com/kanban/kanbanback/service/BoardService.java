@@ -5,10 +5,7 @@ import br.com.kanban.kanbanback.entity.Card;
 import br.com.kanban.kanbanback.entity.ColumnBoard;
 import br.com.kanban.kanbanback.exception.BoardColumNotFound;
 import br.com.kanban.kanbanback.exception.BoardNotFound;
-import br.com.kanban.kanbanback.records.BoardRequestDTO;
-import br.com.kanban.kanbanback.records.BoardResponseDTO;
-import br.com.kanban.kanbanback.records.CardRequestDTO;
-import br.com.kanban.kanbanback.records.ColumnBoardResponseDTO;
+import br.com.kanban.kanbanback.records.*;
 import br.com.kanban.kanbanback.repository.BoardRepository;
 import br.com.kanban.kanbanback.repository.CardRepository;
 import jakarta.validation.Valid;
@@ -62,6 +59,7 @@ public class BoardService {
     }
 
     private BoardResponseDTO toResponse(Board board) {
+
         return new BoardResponseDTO(
                 board.getId(),
                 board.getName(),
@@ -70,10 +68,33 @@ public class BoardService {
                 board.getCreatedAt(),
                 board.getUpdatedAt(),
                 board.getColumns().stream()
-                        .map(c -> new ColumnBoardResponseDTO(c.getId(), c.getNome(), c.isActive(), c.getCreatedAt(), c.getUpdatedAt(), c.getPosicao()))
+                        .map(this::toColumnResponse)
                         .toList());
     }
 
+    private ColumnBoardResponseDTO toColumnResponse(ColumnBoard columnBoard) {
+
+        List<CardResponseDTO> cardResponse = columnBoard.getCards().stream().map(this::toCardResponse).toList();
+
+        return new ColumnBoardResponseDTO(
+                columnBoard.getId(),
+                columnBoard.getNome(),
+                columnBoard.isActive(),
+                columnBoard.getCreatedAt(),
+                columnBoard.getUpdatedAt(),
+                columnBoard.getPosicao(),
+                cardResponse);
+    }
+
+    private CardResponseDTO toCardResponse(Card card) {
+        return new CardResponseDTO(
+                card.getId(),
+                card.getTitulo(),
+                card.getDescricao(),
+                card.getColumnBoard().getId(),
+                card.getCreatedAt(),
+                card.getUpdatedAt());
+    }
 
     public BoardResponseDTO atualizarBoard(Long id, @Valid BoardRequestDTO boardRequestDTO) {
         return null;

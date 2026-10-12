@@ -5,6 +5,7 @@ export interface BoardColumn {
   createdAt?: string;
   updatedAt?: string;
   posicao: number;
+  cards?: Card[];
 }
 
 export interface Board {
@@ -22,6 +23,8 @@ export interface Card {
   titulo: string;
   descricao: string;
   columnBoardId: number;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface CreateCard {

@@ -1,10 +1,10 @@
 package br.com.kanban.kanbanback.entity;
 
 import jakarta.persistence.*;
+import org.hibernate.annotations.Fetch;
+import org.hibernate.annotations.FetchMode;
 
-import java.util.Date;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 @Entity
 public class ColumnBoard {
@@ -32,7 +32,7 @@ public class ColumnBoard {
     private Integer posicao;
 
     @OneToMany(mappedBy = "columnBoard", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Card> cards;
+    private Set<Card> cards = new LinkedHashSet<>();
 
     public Long getId() {
         return id;
@@ -78,10 +78,22 @@ public class ColumnBoard {
     public void setPosicao(Integer posicao) {
         this.posicao = posicao;
     }
-    public List<Card> getCards() {
-        return Optional.ofNullable(cards).orElse(List.of());
+    public Set<Card> getCards() {
+        return Optional.ofNullable(cards).orElse(Set.of());
     }
-    public void setCards(List<Card> cards) {
+    public void setCards(Set<Card> cards) {
         this.cards = cards;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof ColumnBoard other)) return false;
+        return id != null && id.equals(other.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return getClass().hashCode();
     }
 }

@@ -25,6 +25,13 @@
   <section class="content">
     @if (isLoading()) {
       <p class="state">Carregando seus quadros...</p>
+    } @else if (loadError()) {
+      <section class="empty-state">
+        <p class="eyebrow">ALGO DEU ERRADO</p>
+        <h1>Não foi possível carregar.</h1>
+        <p>{{ loadError() }}</p>
+        <button type="button" (click)="loadBoards()">Tentar novamente</button>
+      </section>
     } @else if (selectedBoard(); as board) {
       <header class="board-header">
         <div>
@@ -38,6 +45,9 @@
         </div>
       </header>
 
+      @if (isLoadingBoard()) {
+        <p class="state">Carregando quadro...</p>
+      } @else {
       <section class="columns" cdkDropListGroup aria-label="Colunas do quadro">
         @for (column of orderedColumns(board.columns); track column.id ?? column.nome) {
           <article class="column">
@@ -67,13 +77,12 @@
           </article>
         }
       </section>
-
+      }
     } @else {
       <section class="empty-state">
         <p class="eyebrow">COMECE POR AQUI</p>
-        <h1>Transforme planos em progresso.</h1>
-        <p>Crie um quadro e organize o fluxo de trabalho do seu time.</p>
-        <button type="button" (click)="openCreate()">Criar primeiro quadro</button>
+        <h1>Para iniciar, selecione um board ou crie um novo</h1>
+        <button type="button" (click)="openCreate()">Criar novo quadro</button>
       </section>
     }
   </section>

@@ -13,6 +13,7 @@ import br.com.kanban.kanbanback.repository.CardRepository;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -45,21 +46,33 @@ public class BoardService {
             columnBoard.setUpdatedAt(new Date());
             columnBoard.setPosicao(columnRequestDTO.posicao());
             return columnBoard;
-        }).toList());
+        }).collect(Collectors.toCollection(LinkedHashSet::new)));
         board.setCreatedAt(new Date());
         board.setUpdatedAt(new Date());
 
         Board savedBoard = boardRepository.save(board);
-        return toResponse(savedBoard);
+        return toResponse(savedBoard, true);
     }
 
+    @Transactional(readOnly = true)
     public List<BoardResponseDTO> buscarBoards() {
-        Sort sortColumns = Sort.by(Sort.Order.desc("name"), Sort.Order.asc("columns.posicao"));
-        List<Board> boards = boardRepository.findByActiveTrue(sortColumns);
-        return boards.stream().map(this::toResponse).toList();
+        Sort sort = Sort.by(Sort.Direction.DESC, "id");
+        List<Board> boards = boardRepository.findByActiveTrue(sort);
+        return boards.stream().map(board -> toResponse(board, false)).toList();
     }
 
-    private BoardResponseDTO toResponse(Board board) {
+    @Transactional(readOnly = true)
+    public BoardResponseDTO buscarBoardPorId(Long id) {
+        Board board = boardRepository.findByIdWithColumnsAndCards(id).orElseThrow(() -> new BoardNotFound("Board não encontrado"));
+        return toResponse(board, true);
+    }
+
+    private BoardResponseDTO toResponse(Board board, boolean includeColumns) {
+
+        Optional<List<ColumnBoardResponseDTO>> columns = Optional.empty();
+        if (includeColumns) {
+            columns = Optional.of(board.getColumns().stream().map(this::toColumnResponse).toList());
+        }
 
         return new BoardResponseDTO(
                 board.getId(),
@@ -68,9 +81,7 @@ public class BoardService {
                 board.isActive(),
                 board.getCreatedAt(),
                 board.getUpdatedAt(),
-                board.getColumns().stream()
-                        .map(this::toColumnResponse)
-                        .toList());
+                columns);
     }
 
     private ColumnBoardResponseDTO toColumnResponse(ColumnBoard columnBoard) {
@@ -100,12 +111,13 @@ public class BoardService {
                 card.getUpdatedAt());
     }
 
+    @Transactional
     public BoardResponseDTO atualizarBoard(Long id, @Valid BoardRequestDTO boardRequestDTO) {
 
-        List<ColumnBoard> colunas = new ArrayList<>();
+        Set<ColumnBoard> colunas = new LinkedHashSet<>();
 
         Board boardAtual = boardRepository.findById(id).orElseThrow(() -> new BoardNotFound("Board não encontrado"));
-        List<ColumnBoard> colunasAtuais = boardAtual.getColumns();
+        Set<ColumnBoard> colunasAtuais = boardAtual.getColumns();
         List<Long> colunasAtuaisIds = colunasAtuais.stream().map(ColumnBoard::getId).toList();
         List<ColumnBoardRequestDTO> colunasRequest = boardRequestDTO.columns();
 
@@ -147,9 +159,10 @@ public class BoardService {
         boardAtual.setUpdatedAt(new Date());
 
         boardRepository.save(boardAtual);
-        return toResponse(boardAtual);
+        return toResponse(boardAtual, true);
     }
 
+    @Transactional
     public void adicionarCard(Long boardId, Long columnId, @Valid CardRequestDTO cardRequestDTO) {
         Board board = boardRepository.findById(boardId).orElseThrow(() -> new BoardNotFound("Board não encontrado"));
 
@@ -165,6 +178,7 @@ public class BoardService {
         cardRepository.save(card);
     }
 
+    @Transactional
     public void atualizarCard(Long boardId, Long columnId, Long cardId, @Valid CardRequestDTO cardRequest) {
 
         Board board = boardRepository.findById(boardId).orElseThrow(() -> new BoardNotFound("Board não encontrado"));

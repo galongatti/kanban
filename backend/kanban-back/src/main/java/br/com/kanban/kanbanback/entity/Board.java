@@ -3,7 +3,8 @@ package br.com.kanban.kanbanback.entity;
 import jakarta.persistence.*;
 
 import java.util.Date;
-import java.util.List;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 @Entity
 public class Board {
@@ -25,7 +26,7 @@ public class Board {
     private Date updatedAt;
 
     @OneToMany(mappedBy = "board", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<ColumnBoard> columns;
+    private Set<ColumnBoard> columns = new LinkedHashSet<>();
 
     @Column(nullable = false)
     private boolean active;
@@ -70,11 +71,11 @@ public class Board {
         this.updatedAt = updatedAt;
     }
 
-    public List<ColumnBoard> getColumns() {
+    public Set<ColumnBoard> getColumns() {
         return columns;
     }
 
-    public void setColumns(List<ColumnBoard> columns) {
+    public void setColumns(Set<ColumnBoard> columns) {
         this.columns = columns;
     }
 

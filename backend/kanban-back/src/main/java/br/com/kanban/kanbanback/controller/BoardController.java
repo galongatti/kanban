@@ -40,6 +40,13 @@ public class BoardController {
         return ResponseEntity.status(HttpStatus.OK).body(boards);
     }
 
+    @GetMapping("/{id}")
+    public ResponseEntity<BoardResponseDTO> buscarBoardPorId(@PathVariable Long id)
+    {
+        BoardResponseDTO board = boardService.buscarBoardPorId(id);
+        return ResponseEntity.ok(board);
+    }
+
     @PostMapping("/{boardId}/columns/{columnId}/cards")
     public ResponseEntity<Void> adicionarCard(@PathVariable Long boardId, @PathVariable Long columnId, @Valid @RequestBody CardRequestDTO cardRequestDTO) {
         boardService.adicionarCard(boardId, columnId, cardRequestDTO);

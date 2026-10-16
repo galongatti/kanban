@@ -8,6 +8,15 @@ export interface BoardColumn {
   cards?: Card[];
 }
 
+export interface BoardSummary {
+  id: number;
+  name: string;
+  description: string;
+  active: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface Board {
   id: number;
   name: string;
@@ -15,7 +24,7 @@ export interface Board {
   active: boolean;
   createdAt: string;
   updatedAt: string;
-  columns: BoardColumn[];
+  columns?: BoardColumn[];
 }
 
 export interface Card {

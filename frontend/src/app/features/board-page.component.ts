@@ -1,10 +1,10 @@
 import { CdkDropList, CdkDropListGroup } from '@angular/cdk/drag-drop';
-import { Component, OnInit, computed, signal } from '@angular/core';
+import { Component, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { AuthService } from '../core/auth.service';
 import { BoardService } from '../core/board.service';
-import { Board, BoardColumn, Card, CreateBoard, CreateCard } from '../core/models';
+import { Board, BoardColumn, BoardSummary, Card, CreateBoard, CreateCard } from '../core/models';
 
 interface EditableColumn {
   id?: number;
@@ -20,12 +20,11 @@ interface EditableColumn {
   styleUrl: './board-page.component.scss'
 })
 export class BoardPageComponent implements OnInit {
-  readonly boards = signal<Board[]>([]);
+  readonly boards = signal<BoardSummary[]>([]);
   readonly selectedBoardId = signal<number | null>(null);
-  readonly selectedBoard = computed(
-    () => this.boards().find((board) => board.id === this.selectedBoardId()) ?? null
-  );
+  readonly selectedBoard = signal<Board | null>(null);
   readonly isLoading = signal(true);
+  readonly isLoadingBoard = signal(false);
   readonly isCreating = signal(false);
   readonly isEditing = signal(false);
   readonly isSaving = signal(false);
@@ -33,6 +32,7 @@ export class BoardPageComponent implements OnInit {
   readonly isEditingCard = signal(false);
   readonly isSavingCard = signal(false);
   readonly error = signal('');
+  readonly loadError = signal('');
   readonly cardError = signal('');
   readonly cardColumn = signal<BoardColumn | null>(null);
   readonly editingCardId = signal<number | null>(null);
@@ -54,6 +54,8 @@ export class BoardPageComponent implements OnInit {
 
   selectBoard(id: number): void {
     this.selectedBoardId.set(id);
+    this.selectedBoard.set(null);
+    this.loadBoard(id);
   }
 
   openCreate(): void {
@@ -67,7 +69,7 @@ export class BoardPageComponent implements OnInit {
     this.error.set('');
     this.name = board.name;
     this.description = board.description;
-    this.columns = board.columns.map(({ id, nome, active, posicao }, index) => ({
+    this.columns = (board.columns ?? []).map(({ id, nome, active, posicao }, index) => ({
       id,
       nome,
       active,
@@ -150,7 +152,7 @@ export class BoardPageComponent implements OnInit {
         if (editingCardId) {
           this.updateCardInBoard(board.id, editingCardId, columnId, card);
         } else {
-          this.loadBoards(board.id);
+          this.loadBoard(board.id);
         }
         this.closeCreateCard();
       },
@@ -214,12 +216,22 @@ export class BoardPageComponent implements OnInit {
 
     request.subscribe({
       next: (saved) => {
+        const summary: BoardSummary = {
+          id: saved.id,
+          name: saved.name,
+          description: saved.description,
+          active: saved.active,
+          createdAt: saved.createdAt,
+          updatedAt: saved.updatedAt
+        };
         this.boards.update((boards) =>
           this.isEditing()
-            ? boards.map((board) => (board.id === saved.id ? saved : board))
-            : [...boards, saved]
+            ? boards.map((board) => (board.id === saved.id ? summary : board))
+            : [...boards, summary]
         );
         this.selectedBoardId.set(saved.id);
+        this.selectedBoard.set(saved);
+        this.isLoadingBoard.set(false);
         this.isSaving.set(false);
         this.closeCreate();
       },
@@ -233,34 +245,49 @@ export class BoardPageComponent implements OnInit {
     });
   }
 
-  private loadBoards(selectedBoardId = this.selectedBoardId()): void {
+  loadBoards(): void {
     this.boardService.list().subscribe({
       next: (boards) => {
         this.boards.set(boards);
-        this.selectedBoardId.set(
-          boards.some((board) => board.id === selectedBoardId) ? selectedBoardId : boards[0]?.id ?? null
-        );
+        this.loadError.set('');
         this.isLoading.set(false);
       },
       error: (response) => {
-        this.error.set(response.error?.message ?? 'Não foi possível carregar os quadros.');
+        this.loadError.set(response.error?.message ?? 'Não foi possível carregar os quadros.');
         this.isLoading.set(false);
       }
     });
   }
 
+  private loadBoard(id: number): void {
+    this.isLoadingBoard.set(true);
+    this.loadError.set('');
+    this.boardService.getById(id).subscribe({
+      next: (board) => {
+        if (this.selectedBoardId() === id) {
+          this.selectedBoard.set(board);
+          this.isLoadingBoard.set(false);
+        }
+      },
+      error: (response) => {
+        if (this.selectedBoardId() === id) {
+          this.loadError.set(response.error?.message ?? 'Não foi possível carregar o quadro.');
+          this.isLoadingBoard.set(false);
+        }
+      }
+    });
+  }
+
   private updateCardInBoard(boardId: number, cardId: number, columnId: number, changes: CreateCard): void {
-    this.boards.update((boards) =>
-      boards.map((board) =>
-        board.id !== boardId
-          ? board
-          : this.updateCardColumns(board, cardId, columnId, changes)
-      )
-    );
+    const board = this.selectedBoard();
+    if (board?.id === boardId) {
+      this.selectedBoard.set(this.updateCardColumns(board, cardId, columnId, changes));
+    }
   }
 
   private updateCardColumns(board: Board, cardId: number, columnId: number, changes: CreateCard): Board {
-    const card = board.columns
+    const columns = board.columns ?? [];
+    const card = columns
       .flatMap((column) => this.cardsForColumn(column))
       .find((currentCard) => currentCard.id === cardId);
 
@@ -270,7 +297,7 @@ export class BoardPageComponent implements OnInit {
 
     return {
       ...board,
-      columns: board.columns.map((column) => {
+      columns: columns.map((column) => {
         const cards = this.cardsForColumn(column);
 
         if (column.id === columnId) {
@@ -305,7 +332,7 @@ export class BoardPageComponent implements OnInit {
     }));
   }
 
-  orderedColumns(columns: BoardColumn[]): BoardColumn[] {
+  orderedColumns(columns: BoardColumn[] = []): BoardColumn[] {
     return columns
       .filter((column) => column.active)
       .map((column, index) => ({ column, index }))

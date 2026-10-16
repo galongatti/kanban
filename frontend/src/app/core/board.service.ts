@@ -1,14 +1,18 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { Board, CreateBoard, CreateCard } from './models';
+import { Board, BoardSummary, CreateBoard, CreateCard } from './models';
 
 @Injectable({ providedIn: 'root' })
 export class BoardService {
   constructor(private readonly http: HttpClient) {}
 
-  list(): Observable<Board[]> {
-    return this.http.get<Board[]>('/api/boards');
+  list(): Observable<BoardSummary[]> {
+    return this.http.get<BoardSummary[]>('/api/boards');
+  }
+
+  getById(id: number): Observable<Board> {
+    return this.http.get<Board>(`/api/boards/${id}`);
   }
 
   create(board: CreateBoard): Observable<Board> {

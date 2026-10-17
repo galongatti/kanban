@@ -1,0 +1,45 @@
+<header class="board-header">
+  <div>
+    <p class="eyebrow">QUADRO ATIVO</p>
+    <h1>{{ board.name }}</h1>
+    <p>{{ board.description }}</p>
+  </div>
+  <div class="header-actions">
+    <button class="outline-button" type="button" (click)="editBoard.emit(board)">Editar quadro</button>
+    <button class="outline-button" type="button" (click)="createBoard.emit()">Novo quadro</button>
+  </div>
+</header>
+
+@if (isLoading) {
+  <p class="state">Carregando quadro...</p>
+} @else {
+  <section class="columns" cdkDropListGroup aria-label="Colunas do quadro">
+    @for (column of orderedColumns(board.columns); track column.id ?? column.nome) {
+      <article class="column">
+        <header>
+          <h2>{{ column.nome }}</h2>
+          <span>{{ cardsForColumn(column).length }}</span>
+        </header>
+        <button class="add-card" type="button" (click)="createCard.emit(column)">+ Adicionar card</button>
+        <div class="card-list" cdkDropList [cdkDropListData]="cardsForColumn(column)">
+          @for (card of cardsForColumn(column); track card.id ?? $index) {
+            <article class="card">
+              <div class="card-header">
+                <h3>{{ card.titulo }}</h3>
+                @if (card.id) {
+                  <button type="button" (click)="editCard.emit({ column, card })">Editar</button>
+                }
+              </div>
+              <p>{{ card.descricao }}</p>
+            </article>
+          } @empty {
+            <div class="empty-column">
+              <strong>Sem cards</strong>
+              <span>As tarefas aparecerão aqui.</span>
+            </div>
+          }
+        </div>
+      </article>
+    }
+  </section>
+}

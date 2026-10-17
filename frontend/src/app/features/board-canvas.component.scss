@@ -1,0 +1,31 @@
+:host { display: block; }
+.board-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 24px; margin-bottom: 44px; }
+.eyebrow { margin: 0 0 10px; color: #66804d; font-size: .68rem; font-weight: 800; letter-spacing: .13em; }
+h1, h2, p { margin-top: 0; }
+h1 { margin-bottom: 8px; color: #1d2922; font-size: clamp(2rem, 4vw, 3.4rem); letter-spacing: -.06em; line-height: 1; }
+.board-header > div > p:last-child { color: #667068; }
+.header-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
+.outline-button { border: 1px solid #cfd6cf; border-radius: 7px; padding: 10px 14px; background: transparent; color: #344239; font: inherit; font-weight: 700; cursor: pointer; }
+.columns { display: grid; grid-auto-columns: minmax(260px, 1fr); grid-auto-flow: column; align-items: start; gap: 20px; overflow-x: auto; padding-bottom: 16px; }
+.column { min-height: 340px; padding: 16px; border: 1px solid #e0e4df; border-radius: 11px; background: #eceee9; }
+.column header { display: flex; align-items: center; justify-content: space-between; padding: 0 3px 14px; }
+.column h2 { margin: 0; color: #26342c; font-size: .95rem; letter-spacing: -.02em; }
+.column header span { display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: #d9ddd7; color: #68746c; font-size: .73rem; font-weight: 700; }
+.card-list { min-height: 260px; border: 1px dashed #cbd2ca; border-radius: 7px; padding: 12px; box-sizing: border-box; }
+.add-card { width: 100%; margin-bottom: 10px; border: 1px solid #cbd5c9; border-radius: 6px; padding: 8px; background: #f7f9f5; color: #526f32; font: inherit; font-size: .8rem; font-weight: 800; cursor: pointer; }
+.add-card:hover { background: #e9f0e3; }
+.card-list:has(.card) { display: grid; gap: 8px; align-content: start; }
+.card { border: 1px solid #dce2da; border-radius: 7px; padding: 12px; background: #fff; box-shadow: 0 2px 5px rgb(32 49 39 / 5%); }
+.card-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+.card-header button { border: 0; padding: 0; background: transparent; color: #526f32; font: inherit; font-size: .75rem; font-weight: 800; cursor: pointer; }
+.card-header button:hover { text-decoration: underline; }
+.card h3 { margin: 0 0 6px; color: #2c3a31; font-size: .88rem; }
+.card p { margin: 0; color: #69756c; font-size: .8rem; line-height: 1.45; white-space: pre-wrap; }
+.empty-column { display: grid; gap: 5px; padding: 26px 10px; color: #808981; text-align: center; font-size: .82rem; }
+.empty-column strong { color: #58635b; }
+.state { color: #68736b; }
+
+@media (max-width: 720px) {
+  .board-header { display: block; margin-bottom: 30px; }
+  .header-actions { justify-content: flex-start; margin-top: 16px; }
+}

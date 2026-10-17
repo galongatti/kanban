@@ -1,0 +1,51 @@
+<div class="modal-backdrop" (click)="close.emit()" role="presentation">
+  <section class="modal" role="dialog" aria-modal="true" aria-labelledby="new-board-title" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <div>
+        <p class="eyebrow">{{ isEditing ? 'EDITAR QUADRO' : 'NOVO QUADRO' }}</p>
+        <h2 id="new-board-title">{{ isEditing ? 'Atualize seu fluxo' : 'Configure seu fluxo' }}</h2>
+      </div>
+      <button class="close" type="button" aria-label="Fechar" (click)="close.emit()">×</button>
+    </div>
+    <form (ngSubmit)="save.emit()">
+      <label>
+        Nome do quadro
+        <input [ngModel]="name" (ngModelChange)="nameChange.emit($event)" name="name" required placeholder="Ex.: Lançamento do produto" />
+      </label>
+      <label>
+        Descrição
+        <textarea [ngModel]="description" (ngModelChange)="descriptionChange.emit($event)" name="description" required placeholder="Qual é o objetivo deste quadro?"></textarea>
+      </label>
+      <fieldset>
+        <legend>Colunas (a posição define a ordem)</legend>
+        @for (column of columns; track $index; let index = $index) {
+          <div class="column-input">
+            <input [ngModel]="column.nome" (ngModelChange)="columnChange.emit({ index, changes: { nome: $event } })" name="column-{{ index }}" required />
+            <input
+              [ngModel]="column.posicao"
+              (ngModelChange)="columnChange.emit({ index, changes: { posicao: $event } })"
+              name="column-position-{{ index }}"
+              type="number"
+              min="1"
+              step="1"
+              placeholder="Pos."
+              aria-label="Posição da coluna"
+              required
+            />
+            <button type="button" aria-label="Remover coluna" (click)="removeColumn.emit(index)">×</button>
+          </div>
+        }
+        <button class="add-column" type="button" (click)="addColumn.emit()">+ Adicionar coluna</button>
+      </fieldset>
+      @if (error) {
+        <p class="error" role="alert">{{ error }}</p>
+      }
+      <div class="modal-actions">
+        <button class="secondary" type="button" (click)="close.emit()">Cancelar</button>
+        <button type="submit" [disabled]="isSaving">
+          {{ isSaving ? 'Salvando...' : isEditing ? 'Salvar alterações' : 'Criar quadro' }}
+        </button>
+      </div>
+    </form>
+  </section>
+</div>

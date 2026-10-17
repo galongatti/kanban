@@ -1,21 +1,15 @@
-import { CdkDropList, CdkDropListGroup } from '@angular/cdk/drag-drop';
 import { Component, OnInit, signal } from '@angular/core';
-import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { AuthService } from '../core/auth.service';
 import { BoardService } from '../core/board.service';
 import { Board, BoardColumn, BoardSummary, Card, CreateBoard, CreateCard } from '../core/models';
-
-interface EditableColumn {
-  id?: number;
-  nome: string;
-  active: boolean;
-  posicao: number;
-}
+import { BoardCanvasComponent } from './board-canvas.component';
+import { BoardFormModalComponent, EditableColumn } from './board-form-modal.component';
+import { CardFormModalComponent } from './card-form-modal.component';
 
 @Component({
   selector: 'app-board-page',
-  imports: [CdkDropList, CdkDropListGroup, FormsModule, RouterLink],
+  imports: [BoardCanvasComponent, BoardFormModalComponent, CardFormModalComponent, RouterLink],
   templateUrl: './board-page.component.html',
   styleUrl: './board-page.component.scss'
 })
@@ -185,6 +179,12 @@ export class BoardPageComponent implements OnInit {
     }
   }
 
+  updateColumn(index: number, changes: Partial<EditableColumn>): void {
+    this.columns = this.columns.map((column, currentIndex) =>
+      currentIndex === index ? { ...column, ...changes } : column
+    );
+  }
+
   saveBoard(): void {
     
     const columns = this.columns
@@ -332,14 +332,4 @@ export class BoardPageComponent implements OnInit {
     }));
   }
 
-  orderedColumns(columns: BoardColumn[] = []): BoardColumn[] {
-    return columns
-      .filter((column) => column.active)
-      .map((column, index) => ({ column, index }))
-      .sort((left, right) => {
-        const positionDifference = left.column.posicao - right.column.posicao;
-        return positionDifference || left.index - right.index;
-      })
-      .map(({ column }) => column);
-  }
 }

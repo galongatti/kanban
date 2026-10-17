@@ -1,0 +1,24 @@
+:host { display: contents; }
+.modal-backdrop { position: fixed; inset: 0; z-index: 10; display: grid; place-items: center; padding: 20px; background: rgb(19 34 25 / 58%); }
+.modal { width: min(100%, 580px); max-height: calc(100vh - 40px); overflow: auto; border-radius: 12px; padding: 28px; background: #fdfdfb; box-shadow: 0 25px 60px rgb(0 0 0 / 25%); }
+.modal-header { display: flex; justify-content: space-between; gap: 20px; }
+.eyebrow { margin: 0 0 10px; color: #66804d; font-size: .68rem; font-weight: 800; letter-spacing: .13em; }
+.modal h2 { margin: 0 0 28px; color: #233128; font-size: 1.8rem; letter-spacing: -.05em; }
+.close, .column-input button { border: 0; background: transparent; color: #657067; font-size: 1.6rem; line-height: 1; cursor: pointer; }
+form { display: grid; gap: 18px; }
+label { display: grid; gap: 7px; color: #49534d; font-size: .82rem; font-weight: 700; }
+input, textarea { width: 100%; box-sizing: border-box; border: 1px solid #d6dcd6; border-radius: 7px; padding: 11px; background: #fff; font: inherit; }
+textarea { min-height: 82px; resize: vertical; }
+input:focus, textarea:focus { outline: 2px solid #b0d866; border-color: #b0d866; }
+fieldset { display: grid; gap: 8px; border: 0; padding: 0; margin: 0; }
+legend { margin-bottom: 7px; color: #49534d; font-size: .82rem; font-weight: 700; }
+.column-input { display: flex; gap: 5px; }
+.column-input input:first-child { flex: 1; }
+.column-input input[type='number'] { width: 76px; }
+.column-input button { width: 35px; }
+.add-column { justify-self: start; border: 0; padding: 7px 0; background: transparent; color: #526f32; font: inherit; font-size: .83rem; font-weight: 800; cursor: pointer; }
+.error { margin: 0; color: #a12b2b; font-size: .85rem; }
+.modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 5px; }
+.modal-actions button { border: 0; border-radius: 7px; padding: 12px; background: #a7d254; color: #15261f; font: inherit; font-weight: 800; cursor: pointer; }
+.modal-actions .secondary { border: 1px solid #d3d9d3; background: transparent; color: #4d5950; }
+.modal-actions button:disabled { opacity: .65; cursor: wait; }
